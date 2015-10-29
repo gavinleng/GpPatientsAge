@@ -10,7 +10,8 @@ import datetime
 
 # url = "http://www.hscic.gov.uk/catalogue/PUB13365/gp-reg-patients-01-2014.csv"
 # output_path = "tempGpPatientsAge.csv"
-# required_indicators = ["2014", "01", "MALE_0-4", "MALE_5-9", "MALE_10-14", "FEMALE_0-4", "FEMALE_5-9", "FEMALE_10-14"]
+# required_indicators = ["2014", "01", "MALE_0-4", "MALE_5-9", "MALE_10-14", "FEMALE_0-4", "FEMALE_5-9", "FEMALE_10-14"] or
+# required_indicators = ["2014", "01", "all"]
 
 
 def download(url, reqFields, outPath):
@@ -109,8 +110,8 @@ if args.generateConfig:
     obj = {
         "url": "http://www.hscic.gov.uk/catalogue/PUB13365/gp-reg-patients-01-2014.csv",
         "outPath": "tempGpPatientsAge.csv",
-        "reqFields": ["2014", "01", "MALE_0-4", "MALE_5-9", "MALE_10-14", "FEMALE_0-4", "FEMALE_5-9", "FEMALE_10-14"]
-        #"reqFields": ["2014", "01", "all"]
+        #"reqFields": ["2014", "01", "MALE_0-4", "MALE_5-9", "MALE_10-14", "FEMALE_0-4", "FEMALE_5-9", "FEMALE_10-14"]
+        "reqFields": ["2014", "01", "all"] #"all" means all "male" and "female" fields
     }
 
     logfile = open("log_tempGpPatientsAge.log", "w")
