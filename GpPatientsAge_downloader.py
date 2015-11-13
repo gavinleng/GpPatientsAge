@@ -1,12 +1,16 @@
 __author__ = 'G'
 
 import sys
-import urllib
+sys.path.append('../harvesterlib')
+
 import pandas as pd
 import argparse
 import json
-import datetime
-import hashlib
+
+import now
+import openurl
+import datasave as dsave
+
 
 # url = "http://www.hscic.gov.uk/catalogue/PUB13365/gp-reg-patients-01-2014.csv"
 # output_path = "tempGpPatientsAge.csv"
@@ -14,7 +18,7 @@ import hashlib
 # required_indicators = ["2014", "01", "all"]
 
 
-def download(url, reqFields, outPath):
+def download(url, reqFields, outPath, col, keyCol, digitCheckCol, noDigitRemoveFields):
     reqReq = [x.upper() for x in reqFields]
     dName = outPath
 
@@ -24,17 +28,17 @@ def download(url, reqFields, outPath):
     if reqReq[2] != 'ALL':
         reqs = reqReq[2:]
 
-    col = ['GP_PRACTICE_CODE', 'POSTCODE', 'CCG_CODE', 'NHSE_AREA_TEAM_CODE', 'NHSE_REGION_CODE', 'Sex', 'Age', 'Value', 'Year',  'Month', 'pkey']
+    #col = ['GP_PRACTICE_CODE', 'POSTCODE', 'CCG_CODE', 'NHSE_AREA_TEAM_CODE', 'NHSE_REGION_CODE', 'Sex', 'Age', 'Value', 'Year',  'Month', 'pkey']
 
     # open url
-    socket = openurl(url)
+    socket = openurl.openurl(url, logfile, errfile)
 
     raw_data = {}
     for j in col:
         raw_data[j] = []
 
     # operate this csv file
-    logfile.write(str(now()) + ' csv file loading\n')
+    logfile.write(str(now.now()) + ' csv file loading\n')
     print('csv file loading------')
     df = pd.read_csv(socket, dtype='unicode')
     cList = df.columns.tolist()
@@ -43,7 +47,7 @@ def download(url, reqFields, outPath):
         reqs = cList[8:]
 
     # data reading
-    logfile.write(str(now()) + ' data reading\n')
+    logfile.write(str(now.now()) + ' data reading\n')
     print('data reading------')
 
     list0 = df.loc[:, col[0]].tolist()
@@ -54,8 +58,8 @@ def download(url, reqFields, outPath):
 
     for req in reqs:
         if req not in cList:
-            errfile.write(str(now()) + " Requested data " + str(req) + " don't match the csv file. Please check the file at: " + str(url) + " . End progress\n")
-            logfile.write(str(now()) + ' error and end progress\n')
+            errfile.write(str(now.now()) + " Requested data " + str(req) + " don't match the csv file. Please check the file at: " + str(url) + " . End progress\n")
+            logfile.write(str(now.now()) + ' error and end progress\n')
             sys.exit("Requested data " + str(req) + " don't match the excel file. Please check the file at: " + url)
 
         valueList = df.loc[:, req].tolist()
@@ -71,61 +75,11 @@ def download(url, reqFields, outPath):
 
     raw_data[col[8]] = [iYear] * len(raw_data[col[0]])
     raw_data[col[9]] = [iMonth] * len(raw_data[col[0]])
-    logfile.write(str(now()) + ' data reading end\n')
+    logfile.write(str(now.now()) + ' data reading end\n')
     print('data reading end------')
 
-    # create primary key by md5 for each row
-    logfile.write(str(now()) + ' create primary key\n')
-    print('create primary key------')
-    keyCol = [0, 2, 3, 4, 5, 6, 8, 9]
-    raw_data[col[-1]] = fpkey(raw_data, col, keyCol)
-    logfile.write(str(now()) + ' create primary key end\n')
-    print('create primary key end------')
-
     # save csv file
-    logfile.write(str(now()) + ' writing to file\n')
-    print('writing to file ' + dName)
-    dfw = pd.DataFrame(raw_data, columns=col)
-    dfw = dfw.sort([col[0], col[5], col[6]], ascending=[1, 1, 1])#.dropna()
-    dfw.to_csv(dName, index=False)
-    logfile.write(str(now()) + ' has been extracted and saved as ' + str(dName) + '\n')
-    print('Requested data has been extracted and saved as ' + dName)
-    logfile.write(str(now()) + ' finished\n')
-    print("finished")
-
-def openurl(url):
-    try:
-        socket = urllib.request.urlopen(url)
-    except urllib.error.HTTPError as e:
-        errfile.write(str(now()) + ' file download HTTPError is ' + str(e.code) + ' . End progress\n')
-        logfile.write(str(now()) + ' error and end progress\n')
-        sys.exit('file download HTTPError = ' + str(e.code))
-    except urllib.error.URLError as e:
-        errfile.write(str(now()) + ' file download URLError is ' + str(e.args) + ' . End progress\n')
-        logfile.write(str(now()) + ' error and end progress\n')
-        sys.exit('file download URLError = ' + str(e.args))
-    except Exception:
-        print('file download error')
-        import traceback
-        errfile.write(str(now()) + ' generic exception: ' + str(traceback.format_exc()) + ' . End progress\n')
-        logfile.write(str(now()) + ' error and end progress\n')
-        sys.exit('generic exception: ' + traceback.format_exc())
-
-    return socket
-
-def fpkey(data, col, keyCol):
-    mystring = ''
-    pkey = []
-    for i in range(len(data[col[0]])):
-        for j in keyCol:
-            mystring += str(data[col[j]][i])
-        mymd5 = hashlib.md5(mystring.encode()).hexdigest()
-        pkey.append(mymd5)
-
-    return pkey
-
-def now():
-    return datetime.datetime.now()
+    dsave.save(raw_data, col, keyCol, digitCheckCol, noDigitRemoveFields, dName, logfile)
 
 
 parser = argparse.ArgumentParser(
@@ -140,17 +94,21 @@ if args.generateConfig:
         "url": "http://www.hscic.gov.uk/catalogue/PUB13365/gp-reg-patients-01-2014.csv",
         "outPath": "tempGpPatientsAge.csv",
         #"reqFields": ["2014", "01", "MALE_0-4", "MALE_5-9", "MALE_10-14", "FEMALE_0-4", "FEMALE_5-9", "FEMALE_10-14"]
-        "reqFields": ["2014", "01", "all"] #"all" means all "male" and "female" fields
+        "reqFields": ["2014", "01", "all"], #"all" means all "male" and "female" fields
+        "colFields": ['GP_PRACTICE_CODE', 'POSTCODE', 'CCG_CODE', 'NHSE_AREA_TEAM_CODE', 'NHSE_REGION_CODE', 'Sex', 'Age', 'Value', 'Year',  'Month'],
+        "primaryKeyCol": ['GP_PRACTICE_CODE', 'CCG_CODE', 'NHSE_AREA_TEAM_CODE', 'NHSE_REGION_CODE', 'Sex', 'Age', 'Year',  'Month'],#[0, 2, 3, 4, 5, 6, 8, 9],
+        "digitCheckCol": ['Value'],#[7],
+        "noDigitRemoveFields": []
     }
 
     logfile = open("log_tempGpPatientsAge.log", "w")
-    logfile.write(str(now()) + ' start\n')
+    logfile.write(str(now.now()) + ' start\n')
 
     errfile = open("err_tempGpPatientsAge.err", "w")
 
     with open("config_tempGpPatientsAge.json", "w") as outfile:
         json.dump(obj, outfile, indent=4)
-        logfile.write(str(now()) + ' config file generated and end\n')
+        logfile.write(str(now.now()) + ' config file generated and end\n')
         sys.exit("config file generated")
 
 if args.configFile == None:
@@ -160,11 +118,11 @@ with open(args.configFile) as json_file:
     oConfig = json.load(json_file)
 
     logfile = open('log_' + oConfig["outPath"].split('.')[0] + '.log', "w")
-    logfile.write(str(now()) + ' start\n')
+    logfile.write(str(now.now()) + ' start\n')
 
     errfile = open('err_' + oConfig["outPath"].split('.')[0] + '.err', "w")
 
-    logfile.write(str(now()) + ' read config file\n')
+    logfile.write(str(now.now()) + ' read config file\n')
     print("read config file")
 
-download(oConfig["url"], oConfig["reqFields"], oConfig["outPath"])
+download(oConfig["url"], oConfig["reqFields"], oConfig["outPath"], oConfig["colFields"], oConfig["primaryKeyCol"], oConfig["digitCheckCol"], oConfig["noDigitRemoveFields"])
