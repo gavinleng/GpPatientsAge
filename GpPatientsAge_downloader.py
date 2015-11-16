@@ -28,8 +28,6 @@ def download(url, reqFields, outPath, col, keyCol, digitCheckCol, noDigitRemoveF
     if reqReq[2] != 'ALL':
         reqs = reqReq[2:]
 
-    #col = ['GP_PRACTICE_CODE', 'POSTCODE', 'CCG_CODE', 'NHSE_AREA_TEAM_CODE', 'NHSE_REGION_CODE', 'Sex', 'Age', 'Value', 'Year',  'Month', 'pkey']
-
     # open url
     socket = openurl.openurl(url, logfile, errfile)
 
