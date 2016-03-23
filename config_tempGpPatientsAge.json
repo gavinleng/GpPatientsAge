@@ -1,0 +1,35 @@
+{
+    "primaryKeyCol": [
+        "GP_PRACTICE_CODE",
+        "CCG_CODE",
+        "NHSE_AREA_TEAM_CODE",
+        "NHSE_REGION_CODE",
+        "Sex",
+        "Age",
+        "Year",
+        "Month"
+    ],
+    "digitCheckCol": [
+        "Value"
+    ],
+    "noDigitRemoveFields": [],
+    "colFields": [
+        "GP_PRACTICE_CODE",
+        "POSTCODE",
+        "CCG_CODE",
+        "NHSE_AREA_TEAM_CODE",
+        "NHSE_REGION_CODE",
+        "Sex",
+        "Age",
+        "Value",
+        "Year",
+        "Month"
+    ],
+    "reqFields": [
+        "2014",
+        "01",
+        "all"
+    ],
+    "url": "http://www.hscic.gov.uk/catalogue/PUB13365/gp-reg-patients-01-2014.csv",
+    "outPath": "tempGpPatientsAge.csv"
+}
